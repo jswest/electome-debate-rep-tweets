@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<style>
+* {
+	margin: 0;
+	padding: 0;
+}
+html,
+body {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+svg {
+	display: block;
+	margin: 5px;
+	position: relative;
+}
+header {
+	width: 100%;
+	height: 20px;
+}
+header h1 {
+	background-color: #ececec;
+	font-family: "Montserrat";
+	font-size: 12px;
+	font-weight: 100;
+	letter-spacing: 2.4px;
+	line-height: 20px;
+	text-align: center;
+	text-transform: uppercase;
+}
+#wrapper-wrapper {
+	background-color: #ececec;
+	border-radius: 5px;
+	float: left;
+	margin: 10px;
+	width: calc( 100vw - 340px);
+	height: calc( 100vh - 40px);
+}
+#wrapper {
+	margin: 0 auto;
+	width: calc( 100vh - 40px );
+	height: calc( 100vh - 40px );
+}
+#tweet {
+	background-color: #ececec;
+	border-radius: 5px;
+	box-sizing: border-box;
+	float: right;
+	font-family: "Merriweather Sans";
+	font-size: 15px;
+	font-weight: 800;
+	line-height: 1.5;
+	margin-top: 10px;
+	margin-right: 10px;
+	padding: 10px;
+	position: relative;
+	top: 0;
+	width: 310px;
+	height: calc( 100vh - 40px );
+}
+#tweet-border {
+	border-top: 10px solid black;
+	display: none;
+	width: 320px;
+}
+#tweet-border.active {
+	display: block;
+}
+#tweet-guts {
+}
+#legend {
+	width: 290px;
+	height: 160px;
+	position: absolute;
+	bottom: 20px;
+	right: 20px;
+}
+#legend p {
+	color: white;
+	font-family: "Merriweather Sans";
+	font-size: 10px;
+	font-weight: 800;
+	line-height: 20px;
+	text-align: center;
+	text-transform: uppercase;
+	width: 100%;
+	height: 20px;
+}
+#helper {
+	font-family: "Merriweather";
+	font-size: 15px;
+	font-weight: 400;
+	font-style: italic;
+	margin-bottom: 20px;
+}
+		</style>
+	</head>
+	<body>
+
+		<header>
+			<h1>Clusters of policy-related question tweets from the first presidential debate</h1>
+		</header>
+		<div id="wrapper-wrapper">
+			<div id="wrapper"></div>
+		</div>
+		<div id="tweet">
+			<p id="helper">Hover on a circle to see the tweet text.</p>
+			<div id="tweet-guts"></div>
+		</div>
+		<div id="legend"></div>
+		<script>
+			// window.twttr = (function(d, s, id) {
+			// var js, fjs = d.getElementsByTagName(s)[0],
+			// t = window.twttr || {};
+			// if (d.getElementById(id)) return t;
+			// js = d.createElement(s);
+			// js.id = id;
+			// js.src = "https://platform.twitter.com/widgets.js";
+			// fjs.parentNode.insertBefore(js, fjs);
+
+			// t._e = [];
+			// t.ready = function(f) {
+			// t._e.push(f);
+			// };
+
+			// return t;
+			// }(document, "script", "twitter-wjs"));
+		</script>
+		<script src="d3.min.js"></script>
+		<script>
+
+var colors = {
+	green: {
+		dark: d3.rgb( '#3A4445' ),
+		medium: d3.rgb( '#A0B1B2' ).darker(),
+		light: d3.rgb( '#A0B1B2' ),
+		extralight: d3.rgb( '#C9CCCD' )
+	},
+	blue: {
+		dark: d3.rgb( '#5A76A8' ).darker(),
+		medium: d3.rgb( '#5A76A8' ),
+		light: d3.rgb( '#788AB5' ),
+		extralight: d3.rgb( '#B4BBD5' )
+	},
+	purple: {
+		dark: d3.rgb( '#6D658D' ).darker(),
+		medium: d3.rgb( '#6D658D' ),
+		light: d3.rgb( '#938BAA' ),
+		extralight: d3.rgb( '#C0BCCD' )
+	},
+	red: {
+		dark: d3.rgb( '#9F746E' ).darker(),
+		medium: d3.rgb( '#9F746E' ),
+		light: d3.rgb( '#AE8983' ),
+		extralight: d3.rgb( '#D0BBB6' )
+	},
+	pink: {
+		dark: d3.rgb( '#C58B9C' ).darker(),
+		medium: d3.rgb( '#C58B9C' ),
+		light: d3.rgb( '#D3A5B1' ),
+		extralight: d3.rgb( '#DEC1C8' )
+	},
+	yellow: {
+		dark: d3.rgb( '#B1AF76' ).darker(),
+		medium: d3.rgb( '#B1AF76' ),
+		light: d3.rgb( '#BFBC8C' ),
+		extralight: d3.rgb( '#DCD9C0' )
+	}
+};
+
+var flattenedColors = [
+	colors.green.dark,
+	colors.blue.medium,
+	colors.purple.medium,
+	colors.red.medium,
+	colors.pink.medium,
+	colors.yellow.dark,
+	colors.green.light,
+	colors.yellow.light
+];
+
+var topics = [
+	'foreign policy/national security',
+	'guns',
+	'jobs',
+	'immigration',
+	'race',
+	'environment',
+	'taxes',
+	'economy'
+];
+
+d3.json( 'representative-tweets.json', function ( response ) {
+
+	var color = d3.scaleOrdinal( flattenedColors );
+
+	var xmin = d3.min( response, function ( d ) { return parseFloat( d.x ) } );
+	var xmax = d3.max( response, function ( d ) { return parseFloat( d.x ) } );
+	var ymin = d3.min( response, function ( d ) { return parseFloat( d.y ) } );
+	var ymax = d3.max( response, function ( d ) { return parseFloat( d.y ) } );
+
+	var wrapper = document.getElementById( 'wrapper' );
+	var width = wrapper.clientWidth - 10;
+	var height = wrapper.clientHeight - 10;
+
+	var y = d3.scaleLinear().domain( [ ymin, ymax ] ).range( [ 10, height - 10 ] );
+	var x = d3.scaleLinear().domain( [ xmin, xmax ] ).range( [ 10, height - 10 ] );
+
+
+	var svg = d3.select( '#wrapper' ).append( 'svg' )
+		.attr( 'width', height )
+		.attr( 'height', height );
+
+	svg.selectAll( 'circle' )
+		.data( response )
+		.enter()
+		.append( 'circle' )
+		.attr( 'r', 3 )
+		.attr( 'cx', function ( d ) {
+			return x( parseFloat( d.x ) );
+		})
+		.attr( 'cy', function ( d ) {
+			return y( parseFloat( d.y ) );
+		})
+		.style( 'stroke', 'white' )
+		.style( 'stroke-width', 1 )
+		.style( 'fill', function ( d ) {
+			return color( d.cluster );
+		} )
+		.style( 'cursor', 'pointer' )
+		.style( 'opacity', 0.5 )
+		.on( 'mouseover', function ( d ) {
+			var circle = d3.select( this );
+			circle.transition().duration( 200 ).attr( 'r', 9 ).style( 'opacity', 1 ).style( 'stroke', 'red' ).attr( 'stroke-width', 3 );
+			// twttr.widgets.createTweet( circle.datum().id, document.getElementById( 'tweet' ), {
+			// 	align: 'left'
+			// } )
+			// .then( function ( el ) {
+			// 	console.log( el );
+			// } );
+
+			document.getElementById( 'tweet-guts' ).innerHTML = circle.datum().tweet;
+			document.getElementById( 'tweet-border' ).classList.add( 'active' );
+
+		} )
+		.on( 'mouseleave', function ( d ) {
+			var circle = d3.select( this );
+			circle.transition().duration( 200 ).attr( 'r', 3 ).style( 'opacity', 0.5 ).style( 'stroke', 'white').attr( 'stroke-width', 1 );
+			document.getElementById( 'tweet-guts' ).innerHTML = '';
+			document.getElementById( 'tweet-border' ).classList.remove( 'active' );
+
+
+		} );
+
+	d3.select( '#legend' ).selectAll( 'p' )
+		.data( topics )
+		.enter()
+		.append( 'p' )
+		.text( function ( d ) {
+			return d;
+		} )
+		.style( 'background-color', function ( d, i ){
+			return flattenedColors[i];
+		})
+
+} );
+		</script>
+	</body>
+</html>
