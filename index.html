@@ -176,19 +176,39 @@ var flattenedColors = [
 ];
 
 var topics = [
-	'foreign policy/national security',
-	'guns',
-	'jobs',
-	'immigration',
 	'race',
-	'environment',
+	'economy',
 	'taxes',
-	'economy'
+	'guns',
+	'immigration',
+	'jobs',
+	'foreign policy/national security',
+	'environment'
 ];
 
 d3.json( 'representative-tweets.json', function ( response ) {
 
 	var color = d3.scaleOrdinal( flattenedColors );
+
+	response.sort( function ( a, b ) {
+		return parseInt( a.cluster ) > parseInt( b.cluster ) ? 1 : -1;
+	} );
+
+	var byClusters = {};
+	var clusters = [];
+	response.forEach( function ( d ) {
+		if ( clusters.indexOf( d.cluster ) === -1 ) {
+			clusters.push( d.cluster );
+			byClusters[d.cluster] = [ d ];
+		} else {
+			byClusters[d.cluster].push( d );
+		}
+	} );
+
+	var data = [];
+	Object.keys( clusters ).forEach( function ( key ) {
+		data.push( { id: parseInt( byClusters[key][0].cluster ), data: byClusters[key] } );
+	} );
 
 	var xmin = d3.min( response, function ( d ) { return parseFloat( d.x ) } );
 	var xmax = d3.max( response, function ( d ) { return parseFloat( d.x ) } );
@@ -207,8 +227,14 @@ d3.json( 'representative-tweets.json', function ( response ) {
 		.attr( 'width', height )
 		.attr( 'height', height );
 
-	svg.selectAll( 'circle' )
-		.data( response )
+	var clusters = svg.selectAll( 'g' )
+		.data( data )
+		.enter()
+		.append( 'g' )
+		.attr( 'data-cluster-id', function ( d ) { return d.id } );
+
+	clusters.selectAll( 'circle' )
+		.data( function ( d ) { return d.data } )
 		.enter()
 		.append( 'circle' )
 		.attr( 'r', 3 )
@@ -221,7 +247,7 @@ d3.json( 'representative-tweets.json', function ( response ) {
 		.style( 'stroke', 'white' )
 		.style( 'stroke-width', 1 )
 		.style( 'fill', function ( d ) {
-			return color( d.cluster );
+			return flattenedColors[parseInt( d.cluster )];
 		} )
 		.style( 'cursor', 'pointer' )
 		.style( 'opacity', 0.5 )
