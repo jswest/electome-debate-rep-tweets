@@ -37,7 +37,7 @@ header h1 {
 	border-radius: 5px;
 	float: left;
 	margin: 10px;
-	width: calc( 100vw - 340px);
+	width: calc( 100vw - 340px - 15px);
 	height: calc( 100vh - 40px);
 }
 #wrapper {
@@ -61,14 +61,6 @@ header h1 {
 	top: 0;
 	width: 310px;
 	height: calc( 100vh - 40px );
-}
-#tweet-border {
-	border-top: 10px solid black;
-	display: none;
-	width: 320px;
-}
-#tweet-border.active {
-	display: block;
 }
 #tweet-guts {
 }
@@ -245,7 +237,6 @@ d3.json( 'representative-tweets.json', function ( response ) {
 				.attr( 'stroke-width', 3 );
 
 			document.getElementById( 'tweet-guts' ).innerHTML = circle.datum().tweet;
-			document.getElementById( 'tweet-border' ).classList.add( 'active' );
 
 		} )
 		.on( 'mouseleave', function ( d ) {
@@ -260,7 +251,6 @@ d3.json( 'representative-tweets.json', function ( response ) {
 				.attr( 'stroke-width', 1 );
 
 			document.getElementById( 'tweet-guts' ).innerHTML = '';
-			document.getElementById( 'tweet-border' ).classList.remove( 'active' );
 
 
 		} )
